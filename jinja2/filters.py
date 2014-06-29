@@ -14,6 +14,7 @@ import math
 from random import choice
 from operator import itemgetter
 from itertools import groupby
+from collections import OrderedDict
 from jinja2.utils import Markup, escape, pformat, urlize, soft_unicode, \
      unicode_urlencode
 from jinja2.runtime import Undefined
@@ -666,7 +667,7 @@ def do_round(value, precision=0, method='common'):
 
 
 @environmentfilter
-def do_groupby(environment, value, attribute):
+def do_groupby(environment, value, attribute, sortKeys=True):
     """Group a sequence of objects by a common attribute.
 
     If you for example have a list of dicts or objects that represent persons
@@ -705,18 +706,15 @@ def do_groupby(environment, value, attribute):
        attribute of another attribute.
     """
     expr = make_attrgetter(environment, attribute)
-    return sorted(map(_GroupTuple, groupby(sorted(value, key=expr), expr)))
-
-
-class _GroupTuple(tuple):
-    __slots__ = ()
-    grouper = property(itemgetter(0))
-    list = property(itemgetter(1))
-
-    def __new__(cls, xxx_todo_changeme):
-        (key, value) = xxx_todo_changeme
-        return tuple.__new__(cls, (key, list(value)))
-
+    value = sorted(value, key=expr) if sortKeys else value
+    result = OrderedDict()
+    for v in value:
+        key = expr(v)
+        if key in result:
+            result[key].append(v)
+        else:
+            result[key] = [v]
+    return [ (k, v) for k, v in result.iteritems() ]
 
 @environmentfilter
 def do_sum(environment, iterable, attribute=None, start=0):

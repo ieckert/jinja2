@@ -362,6 +362,21 @@ class FilterTestCase(JinjaTestCase):
             ""
         ]
 
+    def test_groupby_unsorted(self):
+        tmpl = env.from_string('''
+        {%- for grouper, list in [{'foo': 3, 'bar': 7},
+                                  {'foo': 9, 'bar': 3},
+                                  {'foo': 3, 'bar': 2},
+                                  {'foo': 1, 'bar': 4}]|groupby('foo', sortKeys=False) -%}
+            {{ grouper }}{% for x in list %}: {{ x.foo }}, {{ x.bar }}{% endfor %}|
+        {%- endfor %}''')
+        assert tmpl.render().split('|') == [
+            "3: 3, 7: 3, 2",
+            "9: 9, 3",
+            "1: 1, 4",
+            ""
+        ]
+
     def test_groupby_tuple_index(self):
         tmpl = env.from_string('''
         {%- for grouper, list in [('a', 1), ('a', 2), ('b', 1)]|groupby(0) -%}
